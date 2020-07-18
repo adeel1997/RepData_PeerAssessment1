@@ -1,25 +1,90 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible_Research_Assignment_1"
+author: "Adeel"
+date: "18/07/2020"
+output: html_document
 ---
-
-
 ## Loading and preprocessing the data
-
-
+```{r, echo=TRUE,warnings=FALSE}
+# Adding the package and data
+library(lattice)
+data <- read.csv("activity.csv")
+data$date <- as.Date(data$date, "%Y-%m-%d")
+head(data)
+```
 
 ## What is mean total number of steps taken per day?
+```{r, echo=TRUE}
+StepsTotal <- aggregate(steps ~ date, data = data, sum, na.rm = TRUE)
+```
 
+### The histogram looks like 
+```{r}
+hist(StepsTotal$steps, main = "Total steps by day", xlab = "day")
+```
 
+```{r}
+#mean 
+mean(StepsTotal$steps)
+#median
+median(StepsTotal$steps)
+```
 
-## What is the average daily activity pattern?
+## What is average daily activity pattern?
 
+```{r}
+time_series <- tapply(data$steps, data$interval, mean, na.rm = TRUE)
+plot( row.names(time_series),time_series, type = "l", xlab = "5-min interval", ylab = "Average across all Days", main = "Average number of steps taken")
+```
+### Which 5 minute contain maximum nunver of steps
+```{r}
+max_interval <- which.max(time_series)
+names(max_interval)
 
-
+```
 ## Imputing missing values
+### Number of missing values
+```{r}
 
+sum(is.na(data))
 
+```
+### New dataset with filled missing valUe
+```{r}
+data2 <- data
+data2$steps <- ifelse(is.na(data$steps), mean(data$steps, na.rm = TRUE), data$steps)
 
-## Are there differences in activity patterns between weekdays and weekends?
+```
+### Histogram with filled missing value
+```{r}
+StepsTotal2 <- aggregate(steps ~ date, data = data2, sum, na.rm = TRUE)
+hist(StepsTotal2$steps, main = "Total steps by day", xlab = "day")
+```
+By imputing the missing value with mean, the historgam changed
+
+### Mean and median after imputation
+```{r}
+#mean 
+mean(StepsTotal2$steps)
+#median
+median(StepsTotal2$steps)
+```
+
+## Differences in the value in weekday and weekend
+```{r}
+#create a vector of weekdays
+weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+#Use `%in%` and `weekdays` to create a logical vector
+#convert to `factor` and specify the `levels/labels`
+data2$wDay <- factor((weekdays(data2$date) %in% weekdays1),levels=c(FALSE, TRUE), labels=c('weekend', 'weekday')) 
+stepsByDay <- aggregate(steps ~ interval + wDay, data = data2, mean)
+
+```
+
+### Panel plot to show the difference over weekday and weekend
+```{r}
+
+xyplot(steps ~ interval | wDay, stepsByDay, type = "l", layout = c(1, 2), xlab = "Interval", ylab = "Number of steps")
+
+```
+
